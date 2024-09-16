@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DataTable, DataTableSelectionChangeEvent } from 'primereact/datatable';
 import { Column } from 'primereact/column';
-import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 import 'primereact/resources/themes/saga-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
@@ -25,11 +24,7 @@ const Table: React.FC = () => {
   const [selectedArtworks, setSelectedArtworks] = useState<Artwork[]>([]);
   const [page, setPage] = useState(1);
   const [rowsToSelect, setRowsToSelect] = useState<number>(0);
-
-  const rowsOptions = Array.from({ length: 12 }, (_, i) => ({
-    label: `${i + 1} rows`,
-    value: i + 1,
-  }));
+  const [showInput, setShowInput] = useState(false); // State to show/hide input
 
   useEffect(() => {
     fetchArtworks(page);
@@ -55,6 +50,12 @@ const Table: React.FC = () => {
   const handleSelectRows = () => {
     const newSelectedArtworks = artworks.slice(0, rowsToSelect);
     setSelectedArtworks(newSelectedArtworks);
+    setShowInput(false); 
+    setRowsToSelect(0); 
+  };
+
+  const toggleInput = () => {
+    setShowInput(!showInput); 
   };
 
   return (
@@ -76,20 +77,33 @@ const Table: React.FC = () => {
       >
         <Column selectionMode="multiple" headerStyle={{ width: '3em' }}></Column>
 
-        {/* Dropdown beside Title Header */}
+        {/* Dropdown  */}
         <Column
           field="title"
           header={
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <span>Title</span>
-              <Dropdown
-                options={rowsOptions}
-                value={rowsToSelect}
-                onChange={(e) => setRowsToSelect(e.value)}
-                placeholder="Select rows"
-                style={{ marginLeft: '10px' }}
-              />
-              <Button label="Submit" icon="pi pi-check" onClick={handleSelectRows} className="p-button-text" />
+              <i
+                className="pi pi-chevron-down"
+                style={{ marginLeft: '10px', cursor: 'pointer' }}
+                onClick={toggleInput}
+              ></i>
+              {showInput && (
+                <div style={{ marginLeft: '10px', position: 'absolute', zIndex: 10, background: '#fff', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center', width:'200px' }}>
+                  <input
+                    type="number"
+                    value={rowsToSelect}
+                    onChange={(e) => setRowsToSelect(Number(e.target.value))}
+                    placeholder="Select rows..."
+                    style={{ width: '80px' }}
+                  />
+                  <Button
+                    label="Submit"
+                    onClick={handleSelectRows}
+                    style={{ marginLeft: '10px',  marginTop:'10px' }}
+                  />
+                </div>
+              )}
             </div>
           }
         ></Column>
@@ -101,14 +115,7 @@ const Table: React.FC = () => {
         <Column field="date_end" header="End Date"></Column>
       </DataTable>
 
-      <div className="selected-panel">
-        <h3>Selected Artworks</h3>
-        {selectedArtworks.map((artwork) => (
-          <div key={artwork.id}>
-            {artwork.title} - {artwork.artist_display}
-          </div>
-        ))}
-      </div>
+     
     </div>
   );
 };

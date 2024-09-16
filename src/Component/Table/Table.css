@@ -1,7 +1,8 @@
 .datatable-container {
-    width: 80%;
+    width:full;
     margin: 0 auto;
     padding-top: 20px;
+    background-color: white;
   }
   
   .selected-panel {
