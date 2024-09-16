@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { DataTable, DataTableSelectionChangeEvent } from 'primereact/datatable';
+import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import 'primereact/resources/themes/saga-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import './Table.css';
+import { DataTableStateEvent } from 'primereact/datatable';
 
 interface Artwork {
   id: number;
@@ -19,12 +20,12 @@ interface Artwork {
 
 const Table: React.FC = () => {
   const [artworks, setArtworks] = useState<Artwork[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [totalRecords, setTotalRecords] = useState(0);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [totalRecords, setTotalRecords] = useState<number>(0);
   const [selectedArtworks, setSelectedArtworks] = useState<Artwork[]>([]);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState<number>(1);
   const [rowsToSelect, setRowsToSelect] = useState<number>(0);
-  const [showInput, setShowInput] = useState(false); // State to show/hide input
+  const [showInput, setShowInput] = useState<boolean>(false);
 
   useEffect(() => {
     fetchArtworks(page);
@@ -32,30 +33,36 @@ const Table: React.FC = () => {
 
   const fetchArtworks = async (pageNumber: number) => {
     setLoading(true);
-    const response = await fetch(`https://api.artic.edu/api/v1/artworks?page=${pageNumber}`);
-    const data = await response.json();
-    setArtworks(data.data);
-    setTotalRecords(data.pagination.total);
+    try {
+      const response = await fetch(`https://api.artic.edu/api/v1/artworks?page=${pageNumber}&limit=12`);
+      const data = await response.json();
+      setArtworks(data.data);
+      setTotalRecords(data.pagination.total);
+    } catch (error) {
+      console.error('Error fetching artworks:', error);
+    }
     setLoading(false);
   };
 
-  const onPageChange = (event: any) => {
-    setPage(event.page + 1);
+  const onPageChange = (event: DataTableStateEvent) => {
+    setPage((event.page ?? 1) + 1);
   };
 
-  const onRowSelectChange = (e: DataTableSelectionChangeEvent) => {
-    setSelectedArtworks(e.value as Artwork[]);
+  const onRowSelectChange = (e: { value: Artwork[] }) => {
+    setSelectedArtworks(e.value);
   };
 
   const handleSelectRows = () => {
-    const newSelectedArtworks = artworks.slice(0, rowsToSelect);
-    setSelectedArtworks(newSelectedArtworks);
-    setShowInput(false); 
-    setRowsToSelect(0); 
+    if (rowsToSelect > 0 && rowsToSelect <= artworks.length) {
+      const newSelectedArtworks = artworks.slice(0, rowsToSelect);
+      setSelectedArtworks(newSelectedArtworks);
+    }
+    setShowInput(false);
+    setRowsToSelect(0);
   };
 
   const toggleInput = () => {
-    setShowInput(!showInput); 
+    setShowInput(!showInput);
   };
 
   return (
@@ -73,11 +80,10 @@ const Table: React.FC = () => {
         selection={selectedArtworks}
         onSelectionChange={onRowSelectChange}
         dataKey="id"
-        responsiveLayout="scroll"
+        selectionMode="multiple"
       >
         <Column selectionMode="multiple" headerStyle={{ width: '3em' }}></Column>
 
-        {/* Dropdown  */}
         <Column
           field="title"
           header={
@@ -89,10 +95,21 @@ const Table: React.FC = () => {
                 onClick={toggleInput}
               ></i>
               {showInput && (
-                <div style={{ marginLeft: '10px', position: 'absolute', zIndex: 10, background: '#fff', padding: '10px', border: '1px solid #ccc', borderRadius: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center', width:'200px' }}>
+                <div
+                  style={{
+                    marginLeft: '10px',
+                    position: 'absolute',
+                    zIndex: 10,
+                    background: '#fff',
+                    padding: '10px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    width: '200px'
+                  }}
+                >
                   <input
                     type="number"
-                    value={rowsToSelect}
+                    value={rowsToSelect || ''}
                     onChange={(e) => setRowsToSelect(Number(e.target.value))}
                     placeholder="Select rows..."
                     style={{ width: '80px' }}
@@ -100,7 +117,7 @@ const Table: React.FC = () => {
                   <Button
                     label="Submit"
                     onClick={handleSelectRows}
-                    style={{ marginLeft: '10px',  marginTop:'10px' }}
+                    style={{ marginTop: '10px', width: '100%' }}
                   />
                 </div>
               )}
@@ -114,8 +131,6 @@ const Table: React.FC = () => {
         <Column field="date_start" header="Start Date"></Column>
         <Column field="date_end" header="End Date"></Column>
       </DataTable>
-
-     
     </div>
   );
 };
