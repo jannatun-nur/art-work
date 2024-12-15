@@ -20,10 +20,9 @@ const ArtworkTable: React.FC = () => {
   const [selectedArtworks, setSelectedArtworks] = useState<Artwork[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [totalRecords, setTotalRecords] = useState<number>(0);
-  const [selectAll, setSelectAll] = useState<boolean>(false);
   const [page, setPage] = useState<number>(0);
+  const [rowsToSelect, setRowsToSelect] = useState<number>(0);
   const [showInput, setShowInput] = useState<boolean>(false);
-  const [rowsToSelect, setRowsToSelect] = useState<number | null>(null); // Added this state
 
   useEffect(() => {
     fetchArtworks(page + 1);
@@ -48,59 +47,60 @@ const ArtworkTable: React.FC = () => {
     setPage(event.page);
   };
 
-  const handleRowSelectChange = (e: { value: Artwork[] }) => {
-    setSelectedArtworks(e.value);
-    setSelectAll(false); // Reset "Select All" if user manually selects/deselects rows
-  };
-
-  const handleSelectAllToggle = () => {
-    if (selectAll) {
-      // Deselect all rows
-      setSelectedArtworks([]);
-    } else {
-      // Select all rows across the current page
-      const allRows = [...selectedArtworks, ...artworks].filter(
-        (row, index, self) => index === self.findIndex((r) => r.id === row.id)
-      );
-      setSelectedArtworks(allRows);
+  const handleSelectRows = async () => {
+    if (rowsToSelect <= 0 || rowsToSelect > totalRecords) {
+      alert("Invalid number of rows to select");
+      return;
     }
-    setSelectAll(!selectAll);
+
+    setLoading(true);
+    let selectedRows: Artwork[] = [];
+    let currentPage = 1;
+
+    while (selectedRows.length < rowsToSelect && currentPage <= Math.ceil(totalRecords / 12)) {
+      try {
+        const response = await fetch(
+          `https://api.artic.edu/api/v1/artworks?page=${currentPage}&limit=12`
+        );
+        const data = await response.json();
+        selectedRows = [...selectedRows, ...data.data];
+      } catch (error) {
+        console.error("Error fetching rows:", error);
+        break;
+      }
+      currentPage++;
+    }
+
+    setSelectedArtworks(selectedRows.slice(0, rowsToSelect));
+    setLoading(false);
   };
 
-  const isRowSelected = (row: Artwork) => {
-    return selectedArtworks.some((selected) => selected.id === row.id);
-  };
-
-  // Toggle input visibility
   const toggleInput = () => {
-    setShowInput(!showInput);
-  };
-
-  const handleSelectRows = () => {
-    if (rowsToSelect && rowsToSelect > 0) {
-      const rowsToSelectList = artworks.slice(0, rowsToSelect); // Select the first N rows
-      setSelectedArtworks(rowsToSelectList);
-    }
-    setShowInput(false); // Close the input box after submitting
+    setShowInput((prev) => !prev);
   };
 
   return (
     <div style={{ padding: "20px" }}>
       <h2>Artwork Table</h2>
+
       <DataTable
         value={artworks}
         paginator
-        rows={10}
+        rows={12}
         totalRecords={totalRecords}
         lazy
         loading={loading}
         dataKey="id"
         selection={selectedArtworks}
-        onSelectionChange={handleRowSelectChange}
+        onSelectionChange={(e) => setSelectedArtworks(e.value)}
         onPage={handlePageChange}
       >
         <Column
           selectionMode="multiple"
+          headerStyle={{ width: "3em" }}
+        ></Column>
+        <Column
+          field="title"
           header={
             <div style={{ display: "flex", alignItems: "center" }}>
               <span>Title</span>
@@ -139,7 +139,6 @@ const ArtworkTable: React.FC = () => {
             </div>
           }
         ></Column>
-        
         <Column field="place_of_origin" header="Place of Origin"></Column>
         <Column field="artist_display" header="Artist"></Column>
         <Column field="date_start" header="Start Date"></Column>
