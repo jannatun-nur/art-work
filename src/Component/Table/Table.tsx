@@ -38,7 +38,7 @@ const ArtworkTable: React.FC = () => {
       setArtworks(data.data);
       setTotalRecords(data.pagination.total);
     } catch (error) {
-      console.error("Error fetching artworks:", error);
+      console.error("api is not working", error);
     }
     setLoading(false);
   };
@@ -49,7 +49,7 @@ const ArtworkTable: React.FC = () => {
 
   const handleSelectRows = async () => {
     if (rowsToSelect <= 0 || rowsToSelect > totalRecords) {
-      alert("Invalid number of rows to select");
+      alert("invalid selection");
       return;
     }
 
@@ -65,7 +65,7 @@ const ArtworkTable: React.FC = () => {
         const data = await response.json();
         selectedRows = [...selectedRows, ...data.data];
       } catch (error) {
-        console.error("Error fetching rows:", error);
+        console.error("api is not correct", error);
         break;
       }
       currentPage++;
@@ -78,6 +78,10 @@ const ArtworkTable: React.FC = () => {
   const toggleInput = () => {
     setShowInput((prev) => !prev);
   };
+  const closeInput = () => {
+    setShowInput(false);
+  };
+
 
   return (
     <div style={{ padding: "20px" }}>
@@ -127,13 +131,23 @@ const ArtworkTable: React.FC = () => {
                     value={rowsToSelect || ""}
                     onChange={(e) => setRowsToSelect(Number(e.target.value))}
                     placeholder="Select rows..."
-                    style={{ width: "80px" }}
+                    style={{ width: "150px", background:"#fff" , height:"50px" , color:"black" , fontSize:"20px",
+                      borderRadius:"3px"}}
+
                   />
                   <Button
                     label="Submit"
                     onClick={handleSelectRows}
                     style={{ marginTop: "10px", width: "100%" }}
+
                   />
+
+<Button
+                label="Close"
+                className="p-button-secondary"
+                onClick={closeInput}
+                style={{ marginTop: "10px", width: "100%" }}
+              />
                 </div>
               )}
             </div>
