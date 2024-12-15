@@ -1,21 +1,22 @@
-import React, { useState, useEffect } from "react";
-import { DataTable } from "primereact/datatable";
-import { Column } from "primereact/column";
-import "primereact/resources/themes/saga-blue/theme.css";
-import "primereact/resources/primereact.min.css";
-import "primeicons/primeicons.css";
-import { Button } from "primereact/button";
+import React, { useState, useEffect } from 'react';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { Button } from 'primereact/button';
+import 'primereact/resources/themes/saga-blue/theme.css';
+import 'primereact/resources/primereact.min.css';
+import 'primeicons/primeicons.css';
 
 interface Artwork {
   id: number;
   title: string;
   place_of_origin: string;
   artist_display: string;
+  inscriptions: string;
   date_start: number;
   date_end: number;
 }
 
-const ArtworkTable: React.FC = () => {
+const Table: React.FC = () => {
   const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [selectedArtworks, setSelectedArtworks] = useState<Artwork[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -31,25 +32,23 @@ const ArtworkTable: React.FC = () => {
   const fetchArtworks = async (pageNumber: number) => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `https://api.artic.edu/api/v1/artworks?page=${pageNumber}&limit=12`
-      );
+      const response = await fetch(`https://api.artic.edu/api/v1/artworks?page=${pageNumber}&limit=12`);
       const data = await response.json();
       setArtworks(data.data);
       setTotalRecords(data.pagination.total);
     } catch (error) {
-      console.error("api is not working", error);
+      console.error('Error fetching artworks:', error);
     }
     setLoading(false);
   };
 
-  const handlePageChange = (event: { first: number; rows: number; page: number }) => {
-    setPage(event.page);
+  const handlePageChange = (event: { first: number; rows: number }) => {
+    setPage(event.first / event.rows);
   };
 
   const handleSelectRows = async () => {
     if (rowsToSelect <= 0 || rowsToSelect > totalRecords) {
-      alert("invalid selection");
+      alert("Invalid selection");
       return;
     }
 
@@ -65,7 +64,7 @@ const ArtworkTable: React.FC = () => {
         const data = await response.json();
         selectedRows = [...selectedRows, ...data.data];
       } catch (error) {
-        console.error("api is not correct", error);
+        console.error("API error", error);
         break;
       }
       currentPage++;
@@ -78,11 +77,11 @@ const ArtworkTable: React.FC = () => {
   const toggleInput = () => {
     setShowInput((prev) => !prev);
   };
+
   const closeInput = () => {
     setShowInput(false);
   };
-
-
+  
   return (
     <div style={{ padding: "20px" }}>
       <h2>Artwork Table</h2>
@@ -95,6 +94,7 @@ const ArtworkTable: React.FC = () => {
         lazy
         loading={loading}
         dataKey="id"
+        selectionMode="multiple"
         selection={selectedArtworks}
         onSelectionChange={(e) => setSelectedArtworks(e.value)}
         onPage={handlePageChange}
@@ -131,23 +131,26 @@ const ArtworkTable: React.FC = () => {
                     value={rowsToSelect || ""}
                     onChange={(e) => setRowsToSelect(Number(e.target.value))}
                     placeholder="Select rows..."
-                    style={{ width: "150px", background:"#fff" , height:"50px" , color:"black" , fontSize:"20px",
-                      borderRadius:"3px"}}
-
+                    style={{
+                      width: "150px",
+                      background: "#fff",
+                      height: "50px",
+                      color: "black",
+                      fontSize: "20px",
+                      borderRadius: "3px",
+                    }}
                   />
                   <Button
                     label="Submit"
                     onClick={handleSelectRows}
                     style={{ marginTop: "10px", width: "100%" }}
-
                   />
-
-<Button
-                label="Close"
-                className="p-button-secondary"
-                onClick={closeInput}
-                style={{ marginTop: "10px", width: "100%" }}
-              />
+                  <Button
+                    label="Close"
+                    className="p-button-secondary"
+                    onClick={closeInput}
+                    style={{ marginTop: "10px", width: "100%" }}
+                  />
                 </div>
               )}
             </div>
@@ -162,4 +165,4 @@ const ArtworkTable: React.FC = () => {
   );
 };
 
-export default ArtworkTable;
+export default Table;
